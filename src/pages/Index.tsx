@@ -425,7 +425,7 @@ const handleCloseGoldTradeModal = () => {
             navigate('/auth/boxed-signin');
             return;
         }
-        dispatch(setPageTitle('Sales Admin'));
+        dispatch(setPageTitle('Profile'));
     }, [dispatch, navigate]);
 
     const formatCurrency = (amount: any) => {
