@@ -1,14 +1,35 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import io from "socket.io-client";
+import io, { Socket } from "socket.io-client";
 
 const SOCKET_SERVER_URL = "https://capital-server-gnsu.onrender.com";
 const SECRET_KEY = "aurify@123";
 
-export default function useMarketData(symbols = ["GOLD"]) {
-  const [marketData, setMarketData] = useState(null);
-  const socketRef = useRef(null);
+// Define types for better type safety
+interface MarketData {
+  symbol: string;
+  price?: number;
+  change?: number;
+  changePercent?: number;
+  timestamp?: number;
+  [key: string]: any;
+}
 
-  const handleMarketData = useCallback((data: any) => {
+interface ServerToClientEvents {
+  "market-data": (data: MarketData) => void;
+  error: (error: string) => void;
+  connect: () => void;
+  disconnect: () => void;
+}
+
+interface ClientToServerEvents {
+  "request-data": (symbols: string[]) => void;
+}
+
+export default function useMarketData(symbols: string[] = ["GOLD"]) {
+  const [marketData, setMarketData] = useState<MarketData | null>(null);
+  const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+
+  const handleMarketData = useCallback((data: MarketData) => {
     if (data?.symbol?.toLowerCase() === "gold") {
       setMarketData(data);
     }
@@ -16,15 +37,21 @@ export default function useMarketData(symbols = ["GOLD"]) {
 
   useEffect(() => {
     console.log("📡 Connecting to WebSocket...");
-    
-    // Initialize socket connection
+   
+    // Initialize socket connection with proper typing
     socketRef.current = io(SOCKET_SERVER_URL, {
       query: { secret: SECRET_KEY },
       transports: ["websocket"],
       withCredentials: true,
-    });
+    }) as Socket<ServerToClientEvents, ClientToServerEvents>;
 
     const socket = socketRef.current;
+
+    // Null check to ensure socket exists
+    if (!socket) {
+      console.error("❌ Failed to initialize socket connection");
+      return;
+    }
 
     socket.on("connect", () => {
       console.log("✅ Connected to WebSocket server");
@@ -32,13 +59,33 @@ export default function useMarketData(symbols = ["GOLD"]) {
     });
 
     socket.on("market-data", handleMarketData);
-    socket.on("error", (error) => console.error("❌ WebSocket error:", error));
+    
+    socket.on("error", (error: string) => {
+      console.error("❌ WebSocket error:", error);
+    });
 
+    // Cleanup function
     return () => {
       console.log("🔌 Disconnecting WebSocket...");
-      if (socket) socket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
   }, [handleMarketData, symbols]);
 
-  return { marketData };
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
+
+  return { 
+    marketData,
+    isConnected: socketRef.current?.connected || false
+  };
 }
