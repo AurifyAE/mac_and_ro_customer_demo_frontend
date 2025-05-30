@@ -3,78 +3,29 @@ import { ArrowLeft, Clock, CheckCircle, XCircle, AlertCircle, Filter, Search, Ca
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
+interface BranchLocation {
+    branchName: string;
+    branchCode: string;
+}
+
+interface Transaction {
+    _id: string;
+    type: string;
+    assetType?: string | null;
+    amount?: number | null;
+    quantity?: number | null;
+    status: string;
+    createdAt: string;
+    updatedAt?: string;
+    remarks?: string | null;
+    fromLocation?: BranchLocation | null;
+    toLocation?: BranchLocation | null;
+}
+
 const TransactionHistory = () => {
     // Mock data - replace with actual API call
-    const [transactions, setTransactions] = useState([
-        {
-            _id: '1',
-            type: 'deposit',
-            assetType: 'cash',
-            amount: 1500.00,
-            quantity: null,
-            status: 'approved',
-            createdAt: '2024-05-25T10:30:00Z',
-            updatedAt: '2024-05-25T11:15:00Z',
-            remarks: 'Deposit approved by admin'
-        },
-        {
-            _id: '2',
-            type: 'buy',
-            assetType: 'gold',
-            quantity: 10.5,
-            amount: 2100.00,
-            status: 'pending',
-            createdAt: '2024-05-24T14:20:00Z',
-            remarks: null
-        },
-        {
-            _id: '3',
-            type: 'withdraw',
-            assetType: 'cash',
-            amount: 500.00,
-            quantity: null,
-            status: 'rejected',
-            createdAt: '2024-05-23T09:15:00Z',
-            updatedAt: '2024-05-23T16:30:00Z',
-            remarks: 'Insufficient documentation provided'
-        },
-        {
-            _id: '4',
-            type: 'sell',
-            assetType: 'gold',
-            quantity: 5.0,
-            amount: 1000.00,
-            status: 'approved',
-            createdAt: '2024-05-22T11:45:00Z',
-            updatedAt: '2024-05-22T12:30:00Z',
-            remarks: 'Gold sale completed successfully'
-        },
-        {
-            _id: '5',
-            type: 'swapping',
-            assetType: null,
-            amount: 50.00,
-            quantity: null,
-            status: 'approved',
-            fromLocation: { branchName: 'Downtown Branch', branchCode: 'DTB001' },
-            toLocation: { branchName: 'Uptown Branch', branchCode: 'UTB002' },
-            createdAt: '2024-05-21T13:20:00Z',
-            updatedAt: '2024-05-21T14:00:00Z',
-            remarks: 'Branch transfer completed'
-        },
-        {
-            _id: '6',
-            type: 'deposit',
-            assetType: 'gold',
-            quantity: 15.2,
-            amount: null,
-            status: 'pending',
-            createdAt: '2024-05-20T16:10:00Z',
-            remarks: null
-        }
-    ]);
-
-    const [filteredTransactions, setFilteredTransactions] = useState(transactions);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
     const id = useParams().id; // Replace with actual customer ID from context or props
     const [filters, setFilters] = useState({
         type: 'all',
@@ -84,7 +35,7 @@ const TransactionHistory = () => {
     });
     console.log("Customer ID:", id);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const backendUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your environment variables
 
@@ -141,14 +92,14 @@ const TransactionHistory = () => {
         setFilteredTransactions(filtered);
     }, [filters, searchTerm, transactions]);
 
-    const formatCurrency = (amount) => {
+    const formatCurrency = (amount:any) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
         }).format(amount);
     };
 
-    const formatDate = (dateString) => {
+    const formatDate = (dateString:any) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -158,7 +109,7 @@ const TransactionHistory = () => {
         });
     };
 
-    const getStatusIcon = (status) => {
+    const getStatusIcon = (status:any) => {
         switch (status) {
             case 'approved':
                 return <CheckCircle className="w-5 h-5 text-green-400" />;
@@ -171,7 +122,7 @@ const TransactionHistory = () => {
         }
     };
 
-    const getStatusColor = (status) => {
+    const getStatusColor = (status:any) => {
         switch (status) {
             case 'approved':
                 return 'bg-green-500/10 text-green-400 border-green-500/30';
@@ -184,7 +135,7 @@ const TransactionHistory = () => {
         }
     };
 
-    const getTypeIcon = (type, assetType) => {
+    const getTypeIcon = (type:any, assetType:any) => {
         switch (type) {
             case 'deposit':
                 return assetType === 'cash' ? 
@@ -205,7 +156,7 @@ const TransactionHistory = () => {
         }
     };
 
-    const getTypeColor = (type) => {
+    const getTypeColor = (type:any) => {
         switch (type) {
             case 'deposit':
                 return 'bg-green-500/10 text-green-400';
@@ -460,7 +411,7 @@ const TransactionHistory = () => {
                                                 <span className="ml-2 capitalize">{transaction.status}</span>
                                             </span>
                                             <button 
-                                                onClick={() => setSelectedTransaction(transaction)}
+                                                onClick={() => setSelectedTransaction(transaction as any)}
                                                 className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all duration-200"
                                             >
                                                 <Eye className="w-4 h-4 text-gray-300" />

@@ -46,7 +46,7 @@ const LoginRegisterForm = () => {
 
     const backendUrl = import.meta.env.VITE_API_URL; // Using default since we can't access env in artifacts
 
-    const handleLoginSubmit = async (e) => {
+    const handleLoginSubmit = async (e:any) => {
         e.preventDefault();
         setError('');
         setSuccess('');
@@ -86,7 +86,7 @@ const LoginRegisterForm = () => {
         }
     };
 
-    const handleImageUpload = (e) => {
+    const handleImageUpload = (e:any) => {
         const file = e.target.files[0];
         if (file) {
             // Validate file type
@@ -108,7 +108,7 @@ const LoginRegisterForm = () => {
 
             // Create preview
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = (e:any) => {
                 setImagePreview(e.target.result);
             };
             reader.readAsDataURL(file);
@@ -122,13 +122,13 @@ const LoginRegisterForm = () => {
         }));
         setImagePreview(null);
         // Reset file input
-        const fileInput = document.getElementById('imageUpload');
-        if (fileInput) {
-            fileInput.value = '';
-        }
+       const fileInput = document.getElementById('imageUpload') as HTMLInputElement | null;
+if (fileInput) {
+    fileInput.value = '';
+}
     };
 
-    const handleRegisterSubmit = async (e) => {
+    const handleRegisterSubmit = async (e:any) => {
         e.preventDefault();
         setError('');
         setSuccess('');
@@ -185,10 +185,10 @@ const LoginRegisterForm = () => {
                 setImagePreview(null);
                 
                 // Reset file input
-                const fileInput = document.getElementById('imageUpload');
-                if (fileInput) {
-                    fileInput.value = '';
-                }
+               const fileInput = document.getElementById('imageUpload') as HTMLInputElement | null;
+if (fileInput) {
+    fileInput.value = '';
+}
                 
                 // Switch to login form after successful registration
                 setTimeout(() => {
@@ -206,7 +206,7 @@ const LoginRegisterForm = () => {
         }
     };
 
-    const handleLoginInputChange = (e) => {
+    const handleLoginInputChange = (e:any) => {
         const { name, value } = e.target;
         setLoginData(prev => ({
             ...prev,
@@ -214,7 +214,7 @@ const LoginRegisterForm = () => {
         }));
     };
 
-    const handleRegisterInputChange = (e) => {
+    const handleRegisterInputChange = (e:any) => {
         const { name, value } = e.target;
         setRegisterData(prev => ({
             ...prev,
