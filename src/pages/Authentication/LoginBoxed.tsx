@@ -46,10 +46,17 @@ const LoginRegisterForm = () => {
 
     const backendUrl = import.meta.env.VITE_API_URL; // Using default since we can't access env in artifacts
 
-    const handleLoginSubmit = async (e:any) => {
+    const handleLoginSubmit = async (e: any) => {
         e.preventDefault();
         setError('');
         setSuccess('');
+
+        // Required field validation
+        if (!loginData.userName.trim() || !loginData.password.trim()) {
+            setError('Username and password are required.');
+            return;
+        }
+
         setIsSubmitting(true);
         
         try {
@@ -287,7 +294,7 @@ if (fileInput) {
 
                 {/* Login Form */}
                 {isLogin && (
-                    <div className="space-y-6">
+                    <form className="space-y-6" onSubmit={handleLoginSubmit}>
                         {/* Username Input */}
                         <div>
                             <label htmlFor="userName" className="mb-2 block text-sm font-medium text-white">
@@ -341,7 +348,7 @@ if (fileInput) {
 
                         {/* Submit Button */}
                         <button
-                            onClick={handleLoginSubmit}
+                            type="submit"
                             disabled={isSubmitting}
                             className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 font-semibold text-white shadow-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                         >
@@ -354,7 +361,7 @@ if (fileInput) {
                                 'Sign In'
                             )}
                         </button>
-                    </div>
+                    </form>
                 )}
 
                 {/* Register Form */}
