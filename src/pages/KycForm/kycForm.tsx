@@ -68,7 +68,7 @@ const KYCForm = () => {
 
  useEffect(() => {
     const isActive = customer?.kycStatus;
-    if (isActive === 'rejected' || isActive === 'approved' || isActive === 'registered') {
+    if ( isActive === 'approved' || isActive === 'registered') {
         navigate('/'); // Uncomment when using React Router
     }
 }, [customer?.kycStatus, navigate]);
@@ -465,7 +465,7 @@ const KYCForm = () => {
       required
     >
       <option value="" disabled className="text-gray-400 bg-gray-800">
-        Select your bank branch
+        Select your branch
       </option>
       {branches.map((branch) => (
         <option 
@@ -581,7 +581,7 @@ const KYCForm = () => {
                     id="document"
                     name="document"
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,application/pdf"
+                    accept="image/jpeg,image/jpg,image/png,"
                     onChange={(e) => handleFileChange(e, 'document')}
                     className="w-full rounded-lg bg-white/10 border border-white/20 px-4 py-3 text-white file:mr-4 file:rounded file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-white file:hover:bg-blue-700"
                     required

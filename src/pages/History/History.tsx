@@ -17,7 +17,7 @@ interface Transaction {
     status: string;
     createdAt: string;
     updatedAt?: string;
-    remarks?: string | null;
+    Remarks?: string | null;
     fromLocation?: BranchLocation | null;
     toLocation?: BranchLocation | null;
 }
@@ -85,7 +85,7 @@ const TransactionHistory = () => {
         if (searchTerm) {
             filtered = filtered.filter(t => 
                 t._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (t.remarks && t.remarks.toLowerCase().includes(searchTerm.toLowerCase()))
+                (t.Remarks && t.Remarks.toLowerCase().includes(searchTerm.toLowerCase()))
             );
         }
 
@@ -398,9 +398,9 @@ const TransactionHistory = () => {
                                                         ` • Updated: ${formatDate(transaction.updatedAt)}`
                                                     }
                                                 </p>
-                                                {transaction.remarks && (
+                                                {transaction.Remarks && (
                                                     <p className="text-sm text-gray-300 mt-1 italic">
-                                                        "{transaction.remarks}"
+                                                        "{transaction.Remarks}"
                                                     </p>
                                                 )}
                                             </div>
@@ -514,10 +514,10 @@ const TransactionHistory = () => {
                                     )}
                                 </div>
 
-                                {selectedTransaction.remarks && (
+                                {selectedTransaction.Remarks && (
                                     <div className="p-4 rounded-lg bg-white/5">
                                         <p className="text-sm text-gray-300 mb-1">Remarks</p>
-                                        <p className="text-white italic">"{selectedTransaction.remarks}"</p>
+                                        <p className="text-white italic">"{selectedTransaction.Remarks}"</p>
                                     </div>
                                 )}
                             </div>

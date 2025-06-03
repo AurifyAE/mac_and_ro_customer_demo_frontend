@@ -474,12 +474,12 @@ const handleCloseGoldTradeModal = () => {
                     <div className="inline-flex items-center gap-4 px-6 py-3 rounded-full bg-yellow-500/10 border border-yellow-500/20">
                         <div className="flex items-center">
                             <Coins className="w-4 h-4 text-yellow-400 mr-2" />
-                            <span className="text-sm text-gray-300 mr-2">Sell:</span>
-                            <span className="text-yellow-400 font-semibold">${marketData?.bid ? (marketData.bid - customer.spreadValue).toFixed(2) : 'Loading...'}</span>
+                            <span className="text-sm text-gray-300 mr-2">BID:</span>
+                            <span className="text-red-400 font-semibold">${marketData?.bid ? (marketData.bid - customer.spreadValue).toFixed(2) : 'Loading...'}</span>
                         </div>
                         <div className="w-px h-4 bg-gray-500"></div>
                         <div className="flex items-center">
-                            <span className="text-sm text-gray-300 mr-2">Ask:</span>
+                            <span className="text-sm text-gray-300 mr-2">ASK:</span>
                             <span className="text-green-400 font-semibold">${marketData?.offer ? (marketData.offer + customer.spreadValue).toFixed(2) : 'Loading...'}</span>
                         </div>
                         <div className={`w-2 h-2 rounded-full ml-2 ${marketData?.marketStatus === 'TRADEABLE' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
@@ -518,8 +518,12 @@ const handleCloseGoldTradeModal = () => {
                                 <p className="text-sm text-gray-400 mb-4">Member since {formatDate(customer.createdAt)}</p>
 
                                 {/* Account Type Badge */}
-                                {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' ? (
+                                {customer.kycStatus === 'pending'   ? (
                                     <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-600/20 border border-red-500/30 text-red-300 text-sm font-medium mb-6">Not Verified</div>
+                                ) : customer.kycStatus === 'registered' ? (
+                                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-600/20 border border-green-500/30 text-green-300 text-sm font-medium mb-6">Registered</div>
+                                ) : customer.kycStatus === 'rejected' ?(
+                                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-600/20 border border-red-500/30 text-red-300 text-sm font-medium mb-6">Rejected</div>
                                 ) : (
                                     <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 text-blue-300 text-sm font-medium mb-6">
                                         {customer.type === 'B2B' ? 'B2B' : 'B2C'}
@@ -527,7 +531,7 @@ const handleCloseGoldTradeModal = () => {
                                 )}
 
                                 {/* Transaction History Button */}
-                                {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' ? (
+                                {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' || customer.kycStatus === 'rejected' ? (
                                     <button
                                         onClick={() => navigate(`/kyc-form/${customer._id}`)}
                                         disabled={customer.kycStatus === 'registered'}
@@ -545,7 +549,7 @@ const handleCloseGoldTradeModal = () => {
                                 )}
                             </div>
                         </div>
-                        {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' ? (
+                        {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' || customer.kycStatus === 'rejected' ? (
                             <div></div>
                         ) : (
                             <div className="rounded-xl bg-white/10 backdrop-blur-lg border border-white/20 p-6 shadow-2xl mt-6">
@@ -629,7 +633,7 @@ const handleCloseGoldTradeModal = () => {
                                         <p className="text-white">{customer.customerPhone}</p>
                                     </div>
                                 </div>
-                                {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' ? (
+                                {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' || customer.kycStatus === 'rejected' ? (
                                     <div></div>
                                 ) : (
                                     <>
@@ -665,7 +669,7 @@ const handleCloseGoldTradeModal = () => {
                                 )}
                             </div>
                         </div>
-                        {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' ? (
+                        {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' || customer.kycStatus === 'rejected' ? (
                             <div></div>
                         ) : (
                             <>
@@ -679,7 +683,7 @@ const handleCloseGoldTradeModal = () => {
                                             <CreditCard className="w-5 h-5 text-gray-400 mr-3" />
                                             <div>
                                                 <p className="text-xs text-gray-400 uppercase tracking-wide">Bank Account</p>
-                                                <p className="text-white font-mono">****{customer.bankAccountNumber ? customer.bankAccountNumber.slice(-4) : '----'}</p>
+                                                <p className="text-white font-mono">{customer.bankAccountNumber}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center p-3 rounded-lg bg-white/5">
@@ -1110,11 +1114,11 @@ const handleCloseGoldTradeModal = () => {
                 <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10 mb-4">
                     <div className="grid grid-cols-2 gap-4 text-center">
                         <div>
-                            <p className="text-xs text-gray-400">Sell Price</p>
+                            <p className="text-xs text-gray-400">BID</p>
                             <p className="text-sm font-bold text-red-400">${marketData?.bid ? ((marketData.bid - customer.spreadValue) / 31.103).toFixed(2) : 'Loading...'}/g</p>
                         </div>
                         <div>
-                            <p className="text-xs text-gray-400">Ask Price</p>
+                            <p className="text-xs text-gray-400">ASK</p>
                             <p className="text-sm font-bold text-green-400">${marketData?.offer ? ((marketData.offer + customer.spreadValue) / 31.103).toFixed(2) : 'Loading...'}/g</p>
                         </div>
                     </div>
