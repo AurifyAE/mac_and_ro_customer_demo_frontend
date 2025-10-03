@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, CreditCard, MapPin, Globe, Home, Briefcase, Building, Calendar, Wallet, Coins, RefreshCw, X, Plus, Minus, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -107,7 +107,7 @@ const MarketDataDisplay: React.FC<MarketDataDisplayProps> = ({ marketData, sprea
 interface ProfileCardProps {
   customer: Customer;
   handleTransactionHistory: () => void;
-  handleLogout: () => void;
+  handleLogout: () => Promise<void>;
   navigate: (path: string) => void;
 }
 const ProfileCard: React.FC<ProfileCardProps> = ({ customer, handleTransactionHistory, handleLogout, navigate }) => (
@@ -974,6 +974,9 @@ const CustomerProfile: React.FC = () => {
   const [transactionLoading, setTransactionLoading] = useState<boolean>(false);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
 
+  // SSE connection reference
+  const eventSourceRef = useRef<EventSource | null>(null);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -1018,6 +1021,142 @@ const CustomerProfile: React.FC = () => {
     } catch (error) {
       console.error('Error fetching branches:', error);
     }
+  };
+
+  // Set up SSE connection for real-time KYC updates
+  const setupSSE = () => {
+    if (!customerId) return;
+
+    // Build SSE URL for customer-specific events
+    console.log('Customer backendUrl:', backendUrl);
+    
+    // Always construct the full URL with /api/user path
+    const baseUrl = backendUrl || 'http://localhost:5000';
+    // Remove any trailing slashes and ensure we add the correct path
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const sseUrl = `${cleanBaseUrl}/api/user/events/${customerId}`;
+    
+    console.log('Setting up customer SSE connection to:', sseUrl);
+    
+    // Close existing connection if any
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+    
+    // Create new EventSource connection
+    const eventSource = new EventSource(sseUrl);
+    eventSourceRef.current = eventSource;
+    
+    // Connection opened
+    eventSource.onopen = () => {
+      console.log('Customer SSE connection established');
+    };
+    
+    // Listen for messages
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Customer SSE message received:', data);
+        
+        // Handle different event types
+        switch (data.type) {
+          case 'CONNECTION_ESTABLISHED':
+            console.log('Customer SSE connection confirmed:', data.clientId);
+            break;
+            
+          case 'KYC_STATUS_APPROVED':
+            console.log('KYC approved:', data.message);
+            // Refresh customer data to get updated KYC status
+            fetchCustomerById();
+            
+            // Show success notification
+            showSuccessAlert('KYC Approved! 🎉', data.message || 'Your KYC has been approved successfully!');
+            break;
+            
+          case 'KYC_STATUS_REJECTED':
+            console.log('KYC rejected:', data.message);
+            // Refresh customer data to get updated KYC status
+            fetchCustomerById();
+            
+            // Show rejection notification with reasons
+            const reasons = data.data?.reasons ? data.data.reasons.join('<br>• ') : 'Please contact support for details.';
+            showErrorAlert('KYC Rejected ❌', `${data.message}<br><br><strong>Reasons:</strong><br>• ${reasons}`);
+            break;
+            
+          case 'KYC_STATUS_REVERSED':
+            console.log('KYC status reversed:', data.message);
+            // Refresh customer data to get updated KYC status
+            fetchCustomerById();
+            
+            // Show reversal notification
+            Swal.fire({
+              title: 'KYC Status Updated',
+              html: data.message || 'Your KYC status has been updated.',
+              icon: 'info',
+              confirmButtonText: 'OK',
+              background: '#1F2937',
+              color: '#ffffff',
+              confirmButtonColor: '#3B82F6',
+            });
+            break;
+            
+          case 'REQFORM_STATUS_APPROVED':
+            console.log('Request form approved:', data.message);
+            // Refresh customer data to get updated balances
+            fetchCustomerById();
+            
+            // Show success notification
+            showSuccessAlert('Request Approved! 🎉', data.message || 'Your request has been approved successfully!');
+            break;
+            
+          case 'REQFORM_STATUS_REJECTED':
+            console.log('Request form rejected:', data.message);
+            // Refresh customer data
+            fetchCustomerById();
+            
+            // Show rejection notification
+            showErrorAlert('Request Rejected ❌', data.message || 'Your request has been rejected.');
+            break;
+            
+          case 'REQFORM_STATUS_REVERSED':
+            console.log('Request form reversed:', data.message);
+            // Refresh customer data to get updated balances
+            fetchCustomerById();
+            
+            // Show reversal notification
+            Swal.fire({
+              title: 'Request Status Updated',
+              html: data.message || 'Your request status has been updated.',
+              icon: 'info',
+              confirmButtonText: 'OK',
+              background: '#1F2937',
+              color: '#ffffff',
+              confirmButtonColor: '#3B82F6',
+            });
+            break;
+            
+          default:
+            console.log('Unknown customer SSE event type:', data.type);
+        }
+      } catch (error) {
+        console.error('Error parsing customer SSE message:', error);
+      }
+    };
+    
+    // Handle errors
+    eventSource.onerror = (error) => {
+      console.error('Customer SSE connection error:', error);
+      
+      // If connection is closed, attempt to reconnect after 5 seconds
+      if (eventSource.readyState === EventSource.CLOSED) {
+        console.log('Customer SSE connection closed, attempting to reconnect in 5 seconds...');
+        setTimeout(() => {
+          setupSSE();
+        }, 5000);
+      }
+    };
+    
+    return eventSource;
   };
 
   const handleSwapLocation = (): void => {
@@ -1246,9 +1385,36 @@ const CustomerProfile: React.FC = () => {
     navigate(`/history/${customerId}`);
   };
 
-  const handleLogout = (): void => {
-    localStorage.clear();
-    navigate('/auth/boxed-signin');
+  const handleLogout = async (): Promise<void> => {
+    const result = await Swal.fire({
+      title: 'Confirm Logout',
+      text: 'Are you sure you want to logout?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, logout',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+      localStorage.clear();
+      
+      // Show success toast
+      Swal.fire({
+        title: 'Logged Out',
+        text: 'You have been successfully logged out.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+      
+      setTimeout(() => {
+        navigate('/auth/boxed-signin');
+      }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -1271,6 +1437,21 @@ const CustomerProfile: React.FC = () => {
   useEffect(() => {
     fetchBranches();
   }, []);
+
+  // Set up SSE connection for real-time KYC updates
+  useEffect(() => {
+    if (customerId) {
+      const eventSource = setupSSE();
+      
+      // Cleanup on unmount
+      return () => {
+        if (eventSource) {
+          console.log('Cleaning up customer SSE connection');
+          eventSource.close();
+        }
+      };
+    }
+  }, [customerId]);
 
   if (loading) {
     return (
