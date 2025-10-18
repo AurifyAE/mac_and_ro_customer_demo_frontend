@@ -1,6 +1,40 @@
 import React from 'react';
 
-const Step1Form = ({ 
+interface FormData {
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  userName: string;
+  country: string;
+  customerPassword: string;
+  confirmPassword: string;
+}
+
+interface Errors {
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  userName?: string;
+  country?: string;
+  customerPassword?: string;
+  confirmPassword?: string;
+}
+
+interface Step1FormProps {
+  formData: FormData;
+  errors: Errors;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  showPassword: boolean;
+  setShowPassword: (show: boolean) => void;
+  showConfirmPassword: boolean;
+  setShowConfirmPassword: (show: boolean) => void;
+  passwordStrength: number;
+  checkEmailAvailability: (email: string) => void;
+  checkUsernameAvailability: (username: string) => void;
+  handleNext: () => void;
+}
+
+const Step1Form: React.FC<Step1FormProps> = ({ 
   formData, 
   errors, 
   handleInputChange, 
