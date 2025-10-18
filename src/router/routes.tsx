@@ -105,12 +105,20 @@ const Clipboard = lazy(() => import('../pages/Forms/Clipboard'));
 const KYCForm = lazy(() => import('../pages/KycForm/kycForm'));
 const History = lazy(() => import('../pages/History/History'));
 
+// External Registration
+const ExternalRegistration = lazy(() => import('../pages/ExternalRegistration'));
+
 const routes = [
     // dashboard
     {
         path: '/',
         element: <Index />,
           layout: 'blank',
+    },
+    {
+        path: '/register',
+        element: <ExternalRegistration />,
+        layout: 'blank',
     },
     {
         path: '/kyc-form/:id',
