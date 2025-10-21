@@ -29,8 +29,10 @@ const Step3Form: React.FC<Step3FormProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="md:col-span-2">
+      {/* Mobile Responsive Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Identity Number - Full Width */}
+        <div className="col-span-1 md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Identity Number <span className="text-red-500">*</span>
           </label>
@@ -39,7 +41,7 @@ const Step3Form: React.FC<Step3FormProps> = ({
             name="idNumber"
             value={formData.idNumber}
             onChange={handleInputChange}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
+            className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all ${
               errors.idNumber ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your ID/Passport number"
@@ -95,9 +97,10 @@ const Step3Form: React.FC<Step3FormProps> = ({
           )}
         </div>
 
-        <div>
+        {/* Back Side of ID */}
+        <div className="col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Identity Document - Back <span className="text-red-500">*</span>
+            Back Side of ID <span className="text-red-500">*</span>
           </label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#D4AF37] transition">
             {backPreview ? (
@@ -142,24 +145,25 @@ const Step3Form: React.FC<Step3FormProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-between mt-8">
+      {/* Mobile Responsive Buttons */}
+      <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 md:mt-8">
         <button
           type="button"
           onClick={handlePrevious}
-          className="px-8 py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition"
+          className="w-full sm:w-auto px-6 md:px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 order-2 sm:order-1"
         >
           ← Previous
         </button>
         <button
           type="submit"
           disabled={loading}
-          className={`px-8 py-3 font-semibold rounded-lg transition ${
+          className={`w-full sm:w-auto px-6 md:px-8 py-3 font-semibold rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 order-1 sm:order-2 ${
             loading 
               ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-              : 'bg-[#D4AF37] text-black hover:bg-[#B8941F]'
+              : 'bg-[#D4AF37] text-black hover:bg-[#B8941F] focus:ring-[#D4AF37]'
           }`}
         >
-          {loading ? 'Creating Account...' : 'Create Account'}
+          {loading ? 'Submitting...' : 'Complete Registration'}
         </button>
       </div>
     </div>

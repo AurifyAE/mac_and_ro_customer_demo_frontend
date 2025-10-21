@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import Step1Form from '../components/Registration/Step1Form';
 import Step2Form from '../components/Registration/Step2Form';
 import Step3Form from '../components/Registration/Step3Form';
@@ -211,6 +212,31 @@ const ExternalRegistration = () => {
     }
   };
 
+  // Handle phone number change with country code
+  const handlePhoneChange = (value: string, country: any) => {
+    // Store the complete phone number with country code
+    setFormData(prev => ({
+      ...prev,
+      customerPhone: value
+    }));
+
+    // Validate the phone number
+    if (value) {
+      try {
+        const phoneWithPlus = value.startsWith('+') ? value : `+${value}`;
+        const isValid = isValidPhoneNumber(phoneWithPlus);
+        
+        if (!isValid) {
+          setErrors(prev => ({ ...prev, customerPhone: 'Please enter a valid phone number' }));
+        } else {
+          setErrors(prev => ({ ...prev, customerPhone: '' }));
+        }
+      } catch (error) {
+        setErrors(prev => ({ ...prev, customerPhone: 'Please enter a valid phone number' }));
+      }
+    }
+  };
+
   // Handle file uploads
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'identityFront' | 'identityBack') => {
     const file = e.target.files?.[0];
@@ -244,11 +270,38 @@ const ExternalRegistration = () => {
     
     if (step === 1) {
       if (!formData.customerName?.trim()) newErrors.customerName = 'Full name is required';
-      if (!formData.customerPhone?.trim()) newErrors.customerPhone = 'Phone number is required';
+      
+      // Enhanced phone validation
+      if (!formData.customerPhone?.trim()) {
+        newErrors.customerPhone = 'Phone number is required';
+      } else {
+        try {
+          const phoneWithPlus = formData.customerPhone.startsWith('+') ? formData.customerPhone : `+${formData.customerPhone}`;
+          if (!isValidPhoneNumber(phoneWithPlus)) {
+            newErrors.customerPhone = 'Please enter a valid phone number';
+          }
+        } catch (error) {
+          newErrors.customerPhone = 'Please enter a valid phone number';
+        }
+      }
+      
       if (!formData.customerEmail?.trim()) newErrors.customerEmail = 'Email is required';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customerEmail)) {
+        newErrors.customerEmail = 'Please enter a valid email address';
+      }
+      
       if (!formData.userName?.trim()) newErrors.userName = 'Username is required';
+      else if (formData.userName.length < 3) {
+        newErrors.userName = 'Username must be at least 3 characters';
+      }
+      
       if (!formData.country?.trim()) newErrors.country = 'Country is required';
+      
       if (!formData.customerPassword?.trim()) newErrors.customerPassword = 'Password is required';
+      else if (formData.customerPassword.length < 8) {
+        newErrors.customerPassword = 'Password must be at least 8 characters';
+      }
+      
       if (formData.customerPassword !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
       }
@@ -404,17 +457,17 @@ const ExternalRegistration = () => {
     }
   };
 
-  // Step indicator component
+  // Step indicator component - Mobile Responsive
   const StepIndicator = ({ step, title, isActive, isCompleted }: { step: number; title: string; isActive: boolean; isCompleted: boolean }) => (
-    <div className="flex items-center">
-      <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
+    <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+      <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-2 transition-all ${
         isCompleted ? 'bg-[#D4AF37] border-[#D4AF37] text-black' : 
         isActive ? 'bg-black border-[#D4AF37] text-[#D4AF37]' : 
         'bg-gray-200 border-gray-300 text-gray-500'
       }`}>
         {isCompleted ? '✓' : step}
       </div>
-      <span className={`ml-3 font-medium ${
+      <span className={`mt-2 sm:mt-0 sm:ml-3 text-xs sm:text-sm md:text-base font-medium ${
         isActive || isCompleted ? 'text-black' : 'text-gray-500'
       }`}>{title}</span>
     </div>
@@ -463,28 +516,30 @@ const ExternalRegistration = () => {
         </div>
       </header> */}
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
+      {/* Main Content - Mobile Responsive */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="max-w-5xl mx-auto">
-          {/* Title */}
-          <h1 className="text-4xl font-serif text-center mb-8 text-black">Create Your Account</h1>
+          {/* Title - Responsive */}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif text-center mb-6 md:mb-8 text-black">Create Your Account</h1>
           
-          {/* Step Indicators */}
-          <div className="flex justify-between mb-12 max-w-3xl mx-auto">
+          {/* Step Indicators - Mobile Responsive */}
+          <div className="flex flex-col sm:flex-row justify-between mb-8 md:mb-12 max-w-3xl mx-auto px-4 sm:px-0">
             <StepIndicator 
               step={1} 
               title="Basic Information" 
               isActive={currentStep === 1}
               isCompleted={currentStep > 1}
             />
-            <div className={`flex-1 h-0.5 self-center mx-4 ${currentStep > 1 ? 'bg-[#D4AF37]' : 'bg-gray-300'}`}></div>
+            <div className={`hidden sm:block flex-1 h-0.5 self-center mx-2 md:mx-4 ${currentStep > 1 ? 'bg-[#D4AF37]' : 'bg-gray-300'}`}></div>
+            <div className={`block sm:hidden w-0.5 h-8 self-center mx-auto my-2 ${currentStep > 1 ? 'bg-[#D4AF37]' : 'bg-gray-300'}`}></div>
             <StepIndicator 
               step={2} 
               title="Personal Details" 
               isActive={currentStep === 2}
               isCompleted={currentStep > 2}
             />
-            <div className={`flex-1 h-0.5 self-center mx-4 ${currentStep > 2 ? 'bg-[#D4AF37]' : 'bg-gray-300'}`}></div>
+            <div className={`hidden sm:block flex-1 h-0.5 self-center mx-2 md:mx-4 ${currentStep > 2 ? 'bg-[#D4AF37]' : 'bg-gray-300'}`}></div>
+            <div className={`block sm:hidden w-0.5 h-8 self-center mx-auto my-2 ${currentStep > 2 ? 'bg-[#D4AF37]' : 'bg-gray-300'}`}></div>
             <StepIndicator 
               step={3} 
               title="Identity Verification" 
@@ -493,8 +548,8 @@ const ExternalRegistration = () => {
             />
           </div>
 
-          {/* Form Container */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          {/* Form Container - Mobile Responsive */}
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
             <form onSubmit={handleSubmit}>
               {/* Step 1: Basic Information */}
               {currentStep === 1 && (
@@ -510,6 +565,7 @@ const ExternalRegistration = () => {
                   checkEmailAvailability={checkEmailAvailability}
                   checkUsernameAvailability={checkUsernameAvailability}
                   handleNext={handleNext}
+                  handlePhoneChange={handlePhoneChange}
                 />
               )}
 

@@ -43,8 +43,10 @@ const Step2Form: React.FC<Step2FormProps> = ({
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
+      {/* Mobile Responsive Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Date of Birth */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Date of Birth <span className="text-red-500">*</span>
           </label>
@@ -194,18 +196,19 @@ const Step2Form: React.FC<Step2FormProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-between mt-8">
+      {/* Mobile Responsive Buttons */}
+      <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 md:mt-8">
         <button
           type="button"
           onClick={handlePrevious}
-          className="px-8 py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition"
+          className="w-full sm:w-auto px-6 md:px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
         >
           ← Previous
         </button>
         <button
           type="button"
           onClick={handleNext}
-          className="px-8 py-3 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8941F] transition"
+          className="w-full sm:w-auto px-6 md:px-8 py-3 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8941F] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2"
         >
           Next Step →
         </button>

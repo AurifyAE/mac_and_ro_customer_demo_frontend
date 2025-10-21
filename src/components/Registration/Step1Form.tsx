@@ -1,4 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import '../../styles/phoneInput.css';
+import { sortedCountries } from '../../data/countries';
+import { isValidPhoneNumber, parsePhoneNumber } from 'libphonenumber-js';
 
 interface FormData {
   customerName: string;
@@ -32,6 +37,7 @@ interface Step1FormProps {
   checkEmailAvailability: (email: string) => void;
   checkUsernameAvailability: (username: string) => void;
   handleNext: () => void;
+  handlePhoneChange?: (value: string, country: any) => void;
 }
 
 const Step1Form: React.FC<Step1FormProps> = ({ 
@@ -45,12 +51,62 @@ const Step1Form: React.FC<Step1FormProps> = ({
   passwordStrength,
   checkEmailAvailability,
   checkUsernameAvailability,
-  handleNext 
+  handleNext,
+  handlePhoneChange 
 }) => {
+  const [phoneError, setPhoneError] = useState<string>('');
+  const [selectedCountryCode, setSelectedCountryCode] = useState('ae');
+
+  // Validate phone number when it changes
+  const validatePhone = (value: string, country: any) => {
+    if (!value) {
+      setPhoneError('Phone number is required');
+      return false;
+    }
+    
+    try {
+      const phoneWithPlus = value.startsWith('+') ? value : `+${value}`;
+      const isValid = isValidPhoneNumber(phoneWithPlus);
+      
+      if (!isValid) {
+        setPhoneError('Please enter a valid phone number');
+        return false;
+      }
+      
+      setPhoneError('');
+      return true;
+    } catch (error) {
+      setPhoneError('Please enter a valid phone number');
+      return false;
+    }
+  };
+
+  const handlePhoneInputChange = (value: string, country: any) => {
+    // Call the parent handler if provided
+    if (handlePhoneChange) {
+      handlePhoneChange(value, country);
+    } else {
+      // Fallback to using the regular input change handler
+      const event = {
+        target: {
+          name: 'customerPhone',
+          value: value,
+          type: 'tel'
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleInputChange(event);
+    }
+    
+    // Validate the phone number
+    validatePhone(value, country);
+    setSelectedCountryCode(country.countryCode);
+  };
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
+      {/* Mobile Responsive Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Full Name - Full width on mobile */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Full Name <span className="text-red-500">*</span>
           </label>
@@ -59,7 +115,7 @@ const Step1Form: React.FC<Step1FormProps> = ({
             name="customerName"
             value={formData.customerName}
             onChange={handleInputChange}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
+            className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all ${
               errors.customerName ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your full name"
@@ -69,34 +125,41 @@ const Step1Form: React.FC<Step1FormProps> = ({
           )}
         </div>
 
-        <div>
+        {/* Phone Number with International Input */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Phone Number <span className="text-red-500">*</span>
           </label>
-          <div className="flex">
-            <select className="px-3 py-2 border border-r-0 rounded-l-lg border-gray-300 bg-gray-50">
-              <option>+971</option>
-              <option>+1</option>
-              <option>+44</option>
-              <option>+91</option>
-            </select>
-            <input
-              type="tel"
-              name="customerPhone"
-              value={formData.customerPhone}
-              onChange={handleInputChange}
-              className={`flex-1 px-4 py-2 border rounded-r-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
-                errors.customerPhone ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter phone number"
-            />
-          </div>
-          {errors.customerPhone && (
-            <p className="text-red-500 text-xs mt-1">{errors.customerPhone}</p>
+          <PhoneInput
+            country={selectedCountryCode}
+            value={formData.customerPhone}
+            onChange={handlePhoneInputChange}
+            enableSearch={true}
+            searchPlaceholder="Search countries..."
+            containerClass="phone-input-container"
+            inputClass={`!w-full !h-[42px] md:!h-[44px] !text-sm md:!text-base !border !rounded-lg !pl-12 focus:!ring-2 focus:!ring-[#D4AF37] focus:!border-transparent ${
+              phoneError || errors.customerPhone ? '!border-red-500' : '!border-gray-300'
+            }`}
+            buttonClass="!border !border-r-0 !rounded-l-lg !bg-gray-50 hover:!bg-gray-100"
+            dropdownClass="!max-h-60 !overflow-y-auto"
+            searchClass="!px-3 !py-2 !text-sm"
+            placeholder="Enter phone number"
+            preferredCountries={['ae', 'us', 'gb', 'in', 'sa', 'qa', 'kw', 'om', 'bh', 'eg']}
+            enableAreaCodes={false}
+            countryCodeEditable={false}
+            inputProps={{
+              name: 'customerPhone',
+              required: true,
+              autoComplete: 'tel'
+            }}
+          />
+          {(phoneError || errors.customerPhone) && (
+            <p className="text-red-500 text-xs mt-1">{phoneError || errors.customerPhone}</p>
           )}
         </div>
 
-        <div>
+        {/* Email Address */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Email Address <span className="text-red-500">*</span>
           </label>
@@ -106,17 +169,19 @@ const Step1Form: React.FC<Step1FormProps> = ({
             value={formData.customerEmail}
             onChange={handleInputChange}
             onBlur={() => checkEmailAvailability(formData.customerEmail)}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
+            className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all ${
               errors.customerEmail ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your email"
+            autoComplete="email"
           />
           {errors.customerEmail && (
             <p className="text-red-500 text-xs mt-1">{errors.customerEmail}</p>
           )}
         </div>
 
-        <div>
+        {/* Username */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Username <span className="text-red-500">*</span>
           </label>
@@ -126,17 +191,19 @@ const Step1Form: React.FC<Step1FormProps> = ({
             value={formData.userName}
             onChange={handleInputChange}
             onBlur={() => checkUsernameAvailability(formData.userName)}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
+            className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all ${
               errors.userName ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Choose a username"
+            autoComplete="username"
           />
           {errors.userName && (
             <p className="text-red-500 text-xs mt-1">{errors.userName}</p>
           )}
         </div>
 
-        <div>
+        {/* Country Selector with All Countries */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Country <span className="text-red-500">*</span>
           </label>
@@ -144,23 +211,38 @@ const Step1Form: React.FC<Step1FormProps> = ({
             name="country"
             value={formData.country}
             onChange={handleInputChange}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
+            className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent bg-white transition-all ${
               errors.country ? 'border-red-500' : 'border-gray-300'
             }`}
           >
             <option value="">Select Country</option>
-            <option value="UAE">United Arab Emirates</option>
-            <option value="USA">United States</option>
-            <option value="UK">United Kingdom</option>
-            <option value="India">India</option>
-            <option value="Congo">Congo</option>
+            <optgroup label="Popular Countries">
+              <option value="United Arab Emirates">🇦🇪 United Arab Emirates</option>
+              <option value="United States">🇺🇸 United States</option>
+              <option value="United Kingdom">🇬🇧 United Kingdom</option>
+              <option value="India">🇮🇳 India</option>
+              <option value="Saudi Arabia">🇸🇦 Saudi Arabia</option>
+              <option value="Qatar">🇶🇦 Qatar</option>
+              <option value="Kuwait">🇰🇼 Kuwait</option>
+              <option value="Oman">🇴🇲 Oman</option>
+              <option value="Bahrain">🇧🇭 Bahrain</option>
+              <option value="Egypt">🇪🇬 Egypt</option>
+            </optgroup>
+            <optgroup label="All Countries">
+              {sortedCountries.map((country) => (
+                <option key={country.code} value={country.name}>
+                  {country.flag} {country.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
           {errors.country && (
             <p className="text-red-500 text-xs mt-1">{errors.country}</p>
           )}
         </div>
 
-        <div>
+        {/* Password */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Password <span className="text-red-500">*</span>
           </label>
@@ -170,10 +252,11 @@ const Step1Form: React.FC<Step1FormProps> = ({
               name="customerPassword"
               value={formData.customerPassword}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
+              className={`w-full px-3 md:px-4 py-2 md:py-2.5 pr-10 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all ${
                 errors.customerPassword ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Create a password"
+              autoComplete="new-password"
             />
             <button
               type="button"
@@ -212,7 +295,8 @@ const Step1Form: React.FC<Step1FormProps> = ({
           )}
         </div>
 
-        <div>
+        {/* Confirm Password */}
+        <div className="col-span-1 md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Confirm Password <span className="text-red-500">*</span>
           </label>
@@ -222,10 +306,11 @@ const Step1Form: React.FC<Step1FormProps> = ({
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent ${
+              className={`w-full px-3 md:px-4 py-2 md:py-2.5 pr-10 border rounded-lg focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all ${
                 errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Confirm your password"
+              autoComplete="new-password"
             />
             <button
               type="button"
@@ -241,11 +326,12 @@ const Step1Form: React.FC<Step1FormProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-end mt-8">
+      {/* Mobile Responsive Button */}
+      <div className="flex justify-center md:justify-end mt-6 md:mt-8">
         <button
           type="button"
           onClick={handleNext}
-          className="px-8 py-3 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8941F] transition"
+          className="w-full md:w-auto px-6 md:px-8 py-3 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8941F] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2"
         >
           Next Step →
         </button>
