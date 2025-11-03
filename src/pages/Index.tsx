@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Mail, Phone, CreditCard, MapPin, Globe, Home, Briefcase, Building, Calendar, Wallet, Coins, RefreshCw, X, Plus, Minus, LogOut } from 'lucide-react';
+import { User, Mail, Phone, CreditCard, MapPin, Globe, Home, Briefcase, Building, Calendar, Wallet, Coins, RefreshCw, X, Plus, Minus, LogOut, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setPageTitle } from '../store/themeConfigSlice';
@@ -15,7 +15,7 @@ interface Customer {
   customerEmail: string;
   customerPhone: string;
   createdAt: string;
-  kycStatus: 'pending' | 'registered' | 'rejected' | 'verified';
+  kycStatus: 'pending' | 'registered' | 'rejected' | 'verified' | 'approved';
   type: 'B2B' | 'B2C';
   cash: number;
   spreadValue: number;
@@ -26,6 +26,9 @@ interface Customer {
   bankAccountNumber?: string;
   sourceOfIncome?: string;
   image?: { url: string };
+  // Idenfo Integration
+  idenfoId?: number;
+  idenfoRiskRating?: 'low' | 'medium' | 'high' | 'sanction';
   branch?: Array<{
     branch: {
       _id: string;
@@ -133,17 +136,49 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ customer, handleTransactionHi
       <h2 className="text-2xl font-bold text-white mb-2">{customer.customerName || 'Customer'}</h2>
       <p className="text-gray-300 mb-1">@{customer.userName}</p>
       <p className="text-sm text-gray-400 mb-4">Member since {formatDate(customer.createdAt)}</p>
-      {customer.kycStatus === 'pending' ? (
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-600/20 border border-red-500/30 text-red-300 text-sm font-medium mb-6">Not Verified</div>
-      ) : customer.kycStatus === 'registered' ? (
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-600/20 border border-green-500/30 text-green-300 text-sm font-medium mb-6">Registered</div>
-      ) : customer.kycStatus === 'rejected' ? (
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-600/20 border border-red-500/30 text-red-300 text-sm font-medium mb-6">Rejected</div>
-      ) : (
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 text-blue-300 text-sm font-medium mb-6">
-          {customer.type}
-        </div>
-      )}
+      
+      {/* KYC Status Badge */}
+      <div className="space-y-2 mb-6">
+        {customer.kycStatus === 'pending' ? (
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-600/20 border border-red-500/30 text-red-300 text-sm font-medium">
+            <AlertCircle className="w-4 h-4 mr-2" />
+            Not Verified
+          </div>
+        ) : customer.kycStatus === 'registered' ? (
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-600/20 border border-yellow-500/30 text-yellow-300 text-sm font-medium">
+            <AlertCircle className="w-4 h-4 mr-2" />
+            KYC In Progress
+          </div>
+        ) : customer.kycStatus === 'rejected' ? (
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-600/20 border border-red-500/30 text-red-300 text-sm font-medium">
+            <X className="w-4 h-4 mr-2" />
+            KYC Rejected
+          </div>
+        ) : customer.kycStatus === 'approved' ? (
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-600/20 border border-green-500/30 text-green-300 text-sm font-medium">
+            <CheckCircle className="w-4 h-4 mr-2" />
+            KYC Approved
+          </div>
+        ) : (
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 text-blue-300 text-sm font-medium">
+            {customer.type}
+          </div>
+        )}
+        
+        {/* Idenfo Risk Rating Badge */}
+        {customer.idenfoRiskRating && (
+          <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ml-2 ${
+            customer.idenfoRiskRating === 'low' ? 'bg-green-600/20 border border-green-500/30 text-green-300' :
+            customer.idenfoRiskRating === 'medium' ? 'bg-yellow-600/20 border border-yellow-500/30 text-yellow-300' :
+            customer.idenfoRiskRating === 'high' ? 'bg-orange-600/20 border border-orange-500/30 text-orange-300' :
+            customer.idenfoRiskRating === 'sanction' ? 'bg-red-600/20 border border-red-500/30 text-red-300' :
+            'bg-gray-600/20 border border-gray-500/30 text-gray-300'
+          }`}>
+            <Shield className="w-4 h-4 mr-2" />
+            Risk: {customer.idenfoRiskRating.toUpperCase()}
+          </div>
+        )}
+      </div>
       {customer.kycStatus === 'pending' || customer.kycStatus === 'registered' || customer.kycStatus === 'rejected' ? (
         <button
           onClick={() => navigate(`/kyc-form/${customer._id}`)}
@@ -948,10 +983,15 @@ const GoldTradeModal: React.FC<GoldTradeModalProps> = ({
 
 // Main CustomerProfile Component
 const CustomerProfile: React.FC = () => {
-  const iscustomer = JSON.parse(localStorage.getItem('customer') || '{}') as { id: string };
+  const iscustomer = JSON.parse(localStorage.getItem('customer') || '{}') as { id?: string; _id?: string };
   const { marketData } = useMarketData(['GOLD']) as { marketData: MarketData | null };
   const backendUrl: string = import.meta.env.VITE_API_URL;
-  const customerId = iscustomer.id;
+  // Check for both id and _id fields in localStorage
+  const customerId = iscustomer.id || iscustomer._id;
+  
+  // Debug logging to identify the issue
+  console.log('Customer from localStorage:', iscustomer);
+  console.log('Customer ID:', customerId);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState<boolean>(false);
@@ -1382,7 +1422,19 @@ const CustomerProfile: React.FC = () => {
   };
 
   const handleTransactionHistory = (): void => {
-    navigate(`/history/${customerId}`);
+    if (customerId) {
+      navigate(`/history/${customerId}`);
+    } else if (customer?._id) {
+      navigate(`/history/${customer._id}`);
+    } else {
+      console.error('No customer ID available for navigation');
+      // Optionally show an error message to the user
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Unable to load transaction history. Please try logging in again.',
+      });
+    }
   };
 
   const handleLogout = async (): Promise<void> => {

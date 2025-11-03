@@ -1,0 +1,56 @@
+/* Custom styles for react-phone-number-input to match the form design */
+.phone-input-wrapper .PhoneInputInput {
+    width: 100% !important;
+    border-radius: 0.5rem !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 0.75rem 1rem !important;
+    color: white !important;
+    font-size: 1rem !important;
+    transition: all 0.2s !important;
+}
+
+.phone-input-wrapper .PhoneInputInput::placeholder {
+    color: rgb(156, 163, 175) !important;
+}
+
+.phone-input-wrapper .PhoneInputInput:focus {
+    outline: none !important;
+    border-color: rgb(96, 165, 250) !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5) !important;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 0.5rem 0 0 0.5rem !important;
+    color: white !important;
+    padding: 0.75rem 0.5rem !important;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect:focus {
+    outline: none !important;
+    border-color: rgb(96, 165, 250) !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5) !important;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelectArrow {
+    color: rgb(156, 163, 175) !important;
+}
+
+.phone-input-wrapper .PhoneInputCountryIcon {
+    margin-right: 0.5rem !important;
+}
+
+/* Style the dropdown */
+.phone-input-wrapper .PhoneInputCountrySelect option {
+    background: rgb(31, 41, 55) !important;
+    color: white !important;
+}
+
+/* Ensure proper spacing for validation messages */
+.phone-input-wrapper + p {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+}

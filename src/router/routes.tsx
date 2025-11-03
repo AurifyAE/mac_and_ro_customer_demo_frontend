@@ -102,7 +102,7 @@ const DateRangePicker = lazy(() => import('../pages/Forms/DateRangePicker'));
 const Clipboard = lazy(() => import('../pages/Forms/Clipboard'));
 
 // route for kYc 
-const KYCForm = lazy(() => import('../pages/KycForm/kycForm'));
+const KYCForm = lazy(() => import('../pages/KycForm/EnhancedKycFormV2'));
 const History = lazy(() => import('../pages/History/History'));
 
 // External Registration
@@ -127,6 +127,16 @@ const routes = [
     },
     {
         path: '/history/:id',
+        element: <History />,
+          layout: 'blank',
+    },
+    {
+        path: '/transaction',
+        element: <History />,
+          layout: 'blank',
+    },
+    {
+        path: '/transaction/:id',
         element: <History />,
           layout: 'blank',
     },
@@ -463,6 +473,12 @@ const routes = [
     {
         path: '/auth/boxed-signin',
         element: <LoginBoxed />,
+        layout: 'blank',
+    },
+    // Catch-all route for undefined paths
+    {
+        path: '*',
+        element: <Error />,
         layout: 'blank',
     }
     // {

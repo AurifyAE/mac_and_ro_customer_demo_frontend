@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, Globe, User, Phone, UserPlus, LogIn, Upload, X, ChevronDown } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, Upload, X, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { countries, Country } from '../../utils/countries';
+import PhoneInput, { isValidPhoneNumber, getCountryCallingCode } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import '../../styles/phone-input.css';
 
 const LoginRegisterForm = () => {
     // Common states
@@ -10,6 +12,7 @@ const LoginRegisterForm = () => {
     const [success, setSuccess] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [phoneValidationMessage, setPhoneValidationMessage] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -44,25 +47,7 @@ const LoginRegisterForm = () => {
         image: null
     });
 
-    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-    const [countrySearchTerm, setCountrySearchTerm] = useState('');
-    const [phoneValidationMessage, setPhoneValidationMessage] = useState('');
 
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Element;
-            if (showCountryDropdown && !target.closest('.country-dropdown')) {
-                setShowCountryDropdown(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showCountryDropdown]);
 
     const [imagePreview, setImagePreview] = useState(null);
 
@@ -197,23 +182,17 @@ if (fileInput) {
             return;
         }
 
-        // 3. Country validation
-        if (!validateCountrySelection(selectedCountry)) {
-            setError('Please select a valid country from the list');
-            setIsSubmitting(false);
-            return;
-        }
 
-        // 4. Phone number validation with regional patterns
-        if (!registerData.customerPhone.trim()) {
+        // 4. Phone number validation for all countries
+        if (!registerData.customerPhone || !registerData.customerPhone.trim()) {
             setError('Please enter your phone number');
             setIsSubmitting(false);
             return;
         }
 
-        if (!validatePhoneNumber(registerData.customerPhone, selectedCountry)) {
-            const countryName = selectedCountry?.name || 'your country';
-            setError(`Please enter a valid phone number for ${countryName}`);
+        // Use react-phone-number-input's built-in validation for all countries
+        if (!isValidPhoneNumber(registerData.customerPhone)) {
+            setError('Please enter a valid phone number for the selected country');
             setIsSubmitting(false);
             return;
         }
@@ -237,13 +216,6 @@ if (fileInput) {
             return;
         }
 
-        // 6. Regional-specific validation
-        const regionalError = validateRegionalRequirements(registerData, selectedCountry);
-        if (regionalError) {
-            setError(regionalError);
-            setIsSubmitting(false);
-            return;
-        }
 
         // 7. Username validation
         if (registerData.userName.length < 3) {
@@ -267,7 +239,7 @@ if (fileInput) {
             formData.append('userName', registerData.userName.trim());
             formData.append('customerPassword', registerData.customerPassword.trim());
             formData.append('customerEmail', registerData.customerEmail.trim());
-            formData.append('country', selectedCountry?.name || '');
+            formData.append('country', '');
             formData.append('customerPhone', registerData.customerPhone.trim());
             
             // Append image if selected
@@ -295,8 +267,8 @@ if (fileInput) {
                     confirmPassword: '',
                     image: null
                 });
-                setSelectedCountry(null);
                 setImagePreview(null);
+                setPhoneValidationMessage('');
                 
                 // Reset file input
                const fileInput = document.getElementById('imageUpload') as HTMLInputElement | null;
@@ -334,166 +306,28 @@ if (fileInput) {
             ...prev,
             [name]: value
         }));
+    };
 
-        // Real-time phone validation feedback
-        if (name === 'customerPhone' && selectedCountry) {
-            if (value.trim() === '') {
-                setPhoneValidationMessage('');
-            } else if (validatePhoneNumber(value, selectedCountry)) {
-                setPhoneValidationMessage('✓ Valid phone number');
-            } else {
-                const cleanPhone = value.replace(/\D/g, '');
-                const expectedLength = getExpectedPhoneLength(selectedCountry);
-                setPhoneValidationMessage(`Invalid format. Expected ${expectedLength} digits for ${selectedCountry.name}`);
-            }
+    const handlePhoneChange = (value: string | undefined) => {
+        const phoneValue = value || '';
+        setRegisterData(prev => ({ ...prev, customerPhone: phoneValue }));
+        
+        // Real-time validation feedback
+        if (phoneValue.trim() === '') {
+            setPhoneValidationMessage('');
+        } else if (isValidPhoneNumber(phoneValue)) {
+            setPhoneValidationMessage('✓ Valid phone number');
+        } else {
+            setPhoneValidationMessage('Please enter a complete and valid phone number');
         }
     };
 
-    // Helper function to get expected phone length for a country
-    const getExpectedPhoneLength = (country: Country): string => {
-        const lengthMap: { [key: string]: string } = {
-            'US': '10', 'CA': '10',
-            'GB': '10-11', 'DE': '10-12', 'FR': '9-10', 'IT': '9-11', 'ES': '9', 'NL': '9',
-            'IN': '10', 'CN': '11', 'JP': '10-11', 'AU': '9-10', 'SG': '8',
-            'AE': '9', 'SA': '9', 'EG': '10-11', 'ZA': '9',
-            'BR': '10-11', 'MX': '10', 'AR': '10-11'
-        };
-        return lengthMap[country.code] || '7-15';
-    };
-
-    const handleCountrySelect = (country: Country) => {
-        setSelectedCountry(country);
-        setShowCountryDropdown(false);
-        setCountrySearchTerm('');
-        
-        // Update register data with country info
-        setRegisterData(prev => ({
-            ...prev,
-            country: country.name
-        }));
-        
-        // Clear phone number when country changes to avoid invalid combinations
-        setRegisterData(prev => ({
-            ...prev,
-            customerPhone: ''
-        }));
-    };
-
-    // Enhanced validation functions for different regions
-    const validatePhoneNumber = (phone: string, country: Country | null): boolean => {
-        if (!phone || !country) return false;
-        
-        // Remove all non-digit characters
-        const cleanPhone = phone.replace(/\D/g, '');
-        
-        // Regional phone validation patterns
-        const phonePatterns: { [key: string]: RegExp } = {
-            // North America (US, Canada)
-            'US': /^[2-9]\d{9}$/, // 10 digits, first digit 2-9
-            'CA': /^[2-9]\d{9}$/, // Same as US
-            
-            // Europe
-            'GB': /^\d{10,11}$/, // UK: 10-11 digits
-            'DE': /^\d{10,12}$/, // Germany: 10-12 digits
-            'FR': /^\d{9,10}$/, // France: 9-10 digits
-            'IT': /^\d{9,11}$/, // Italy: 9-11 digits
-            'ES': /^\d{9}$/, // Spain: 9 digits
-            'NL': /^\d{9}$/, // Netherlands: 9 digits
-            
-            // Asia Pacific
-            'IN': /^\d{10}$/, // India: 10 digits
-            'CN': /^\d{11}$/, // China: 11 digits
-            'JP': /^\d{10,11}$/, // Japan: 10-11 digits
-            'AU': /^\d{9,10}$/, // Australia: 9-10 digits
-            'SG': /^\d{8}$/, // Singapore: 8 digits
-            
-            // Middle East & Africa
-            'AE': /^\d{9}$/, // UAE: 9 digits
-            'SA': /^\d{9}$/, // Saudi Arabia: 9 digits
-            'EG': /^\d{10,11}$/, // Egypt: 10-11 digits
-            'ZA': /^\d{9}$/, // South Africa: 9 digits
-            
-            // Latin America
-            'BR': /^\d{10,11}$/, // Brazil: 10-11 digits
-            'MX': /^\d{10}$/, // Mexico: 10 digits
-            'AR': /^\d{10,11}$/, // Argentina: 10-11 digits
-        };
-        
-        const pattern = phonePatterns[country.code] || /^\d{7,15}$/; // Default: 7-15 digits
-        return pattern.test(cleanPhone);
-    };
-
-    const validateCountrySelection = (country: Country | null): boolean => {
-        if (!country) return false;
-        
-        // Ensure the country exists in our countries list
-        const validCountry = countries.find(c => 
-            c.code === country.code && 
-            c.name === country.name && 
-            c.phoneCode === country.phoneCode
-        );
-        
-        return !!validCountry;
-    };
-
-    const validateRegionalRequirements = (data: any, country: Country | null): string | null => {
-        if (!country) return 'Please select a valid country';
-        
-        // Regional-specific validation rules
-        const regionalRules: { [key: string]: (data: any) => string | null } = {
-            // European GDPR regions - stricter email validation
-            'GB': (data) => {
-                if (!data.customerEmail.includes('.')) return 'Email must contain a valid domain';
-                return null;
-            },
-            'DE': (data) => {
-                if (!data.customerEmail.includes('.')) return 'Email must contain a valid domain';
-                return null;
-            },
-            'FR': (data) => {
-                if (!data.customerEmail.includes('.')) return 'Email must contain a valid domain';
-                return null;
-            },
-            
-            // US - Additional name validation
-            'US': (data) => {
-                if (data.customerName.length < 2) return 'Name must be at least 2 characters';
-                if (!/^[a-zA-Z\s'-]+$/.test(data.customerName)) return 'Name can only contain letters, spaces, hyphens, and apostrophes';
-                return null;
-            },
-            
-            // India - Additional validation
-            'IN': (data) => {
-                if (data.customerName.length < 2) return 'Name must be at least 2 characters';
-                return null;
-            },
-            
-            // UAE - Additional validation
-            'AE': (data) => {
-                if (data.customerName.length < 2) return 'Name must be at least 2 characters';
-                return null;
-            },
-            
-            // Default validation for other countries
-            'default': (data) => {
-                if (data.customerName.length < 2) return 'Name must be at least 2 characters';
-                return null;
-            }
-        };
-        
-        const validator = regionalRules[country.code] || regionalRules['default'];
-        return validator(data);
-    };
-
-    const filteredCountries = countries.filter(country =>
-        country.name.toLowerCase().includes(countrySearchTerm.toLowerCase()) ||
-        country.phoneCode.includes(countrySearchTerm)
-    );
 
     const switchForm = () => {
         setIsLogin(!isLogin);
         setError('');
         setSuccess('');
+        setPhoneValidationMessage('');
     };
 
     return (
@@ -738,88 +572,19 @@ if (fileInput) {
                             </div>
                         </div>
 
-                        {/* Country Selection */}
-                        <div>
-                            <label htmlFor="country" className="mb-2 block text-sm font-medium text-white">
-                                Country *
-                            </label>
-                            <div className="relative country-dropdown">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                                    className="w-full rounded-lg bg-white/10 border border-white/20 px-4 py-3 pl-12 pr-12 text-left text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all duration-200"
-                                >
-                                    {selectedCountry ? (
-                                        <span className="flex items-center">
-                                            <span className="mr-2">{selectedCountry.flag}</span>
-                                            {selectedCountry.name} ({selectedCountry.phoneCode})
-                                        </span>
-                                    ) : (
-                                        <span className="text-gray-400">Select your country</span>
-                                    )}
-                                </button>
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <Globe className="w-5 h-5" />
-                                </span>
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <ChevronDown className={`w-5 h-5 transition-transform ${showCountryDropdown ? 'rotate-180' : ''}`} />
-                                </span>
-                                
-                                {showCountryDropdown && (
-                                    <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-white/20 rounded-lg shadow-lg max-h-60 overflow-hidden">
-                                        <div className="p-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Search countries..."
-                                                value={countrySearchTerm}
-                                                onChange={(e) => setCountrySearchTerm(e.target.value)}
-                                                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400 focus:outline-none focus:border-blue-400"
-                                            />
-                                        </div>
-                                        <div className="max-h-48 overflow-y-auto">
-                                            {filteredCountries.map((country) => (
-                                                <button
-                                                    key={country.code}
-                                                    type="button"
-                                                    onClick={() => handleCountrySelect(country)}
-                                                    className="w-full px-4 py-2 text-left text-white hover:bg-white/10 transition-colors flex items-center"
-                                                >
-                                                    <span className="mr-3">{country.flag}</span>
-                                                    <span className="flex-1">{country.name}</span>
-                                                    <span className="text-gray-400 text-sm">{country.phoneCode}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Phone */}
+                        {/* Phone Number */}
                         <div>
                             <label htmlFor="customerPhone" className="mb-2 block text-sm font-medium text-white">
                                 Phone Number *
                             </label>
-                            <div className="relative flex">
-                                <div className="flex items-center px-3 bg-white/5 border border-white/20 border-r-0 rounded-l-lg">
-                                    {selectedCountry ? (
-                                        <span className="flex items-center text-white text-sm">
-                                            <span className="mr-1">{selectedCountry.flag}</span>
-                                            {selectedCountry.phoneCode}
-                                        </span>
-                                    ) : (
-                                        <span className="text-gray-400 text-sm">+00</span>
-                                    )}
-                                </div>
-                                <input
-                                    id="customerPhone"
-                                    name="customerPhone"
-                                    type="tel"
-                                    placeholder="Enter your phone number"
-                                    className="flex-1 rounded-r-lg bg-white/10 border border-white/20 px-4 py-3 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all duration-200"
+                            <div className="phone-input-wrapper">
+                                <PhoneInput
+                                    placeholder="Enter phone number"
                                     value={registerData.customerPhone}
-                                    onChange={handleRegisterInputChange}
-                                    required
+                                    onChange={handlePhoneChange}
+                                    defaultCountry="US"
+                                    international
+                                    countryCallingCodeEditable={false}
                                 />
                             </div>
                             {/* Phone validation message */}
