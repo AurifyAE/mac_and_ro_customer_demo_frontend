@@ -27,16 +27,17 @@ const LoginRegisterForm = () => {
             // If no token, ensure we're on the login page
             setIsLogin(true);
         }
-    }, [])
-    
+    }, []);
+
     // Login states
     const [loginData, setLoginData] = useState({
         userName: '',
-        password: ''
+        password: '',
     });
 
     // Register states
     const [registerData, setRegisterData] = useState({
+        customerType: '',
         customerName: '',
         userName: '',
         customerPassword: '',
@@ -44,10 +45,8 @@ const LoginRegisterForm = () => {
         country: '',
         customerPhone: '',
         confirmPassword: '',
-        image: null
+        image: null,
     });
-
-
 
     const [imagePreview, setImagePreview] = useState(null);
 
@@ -65,10 +64,10 @@ const LoginRegisterForm = () => {
         }
 
         setIsSubmitting(true);
-        
+
         try {
             console.log('Submitting login with:', loginData);
-            
+
             // Simulate API call - replace with actual axios call
             const response = await fetch(`${backendUrl}/api/user/login`, {
                 method: 'POST',
@@ -106,7 +105,7 @@ const LoginRegisterForm = () => {
         return emailRegex.test(email);
     };
 
-    const handleImageUpload = (e:any) => {
+    const handleImageUpload = (e: any) => {
         const file = e.target.files[0];
         if (file) {
             // Validate file type
@@ -114,21 +113,21 @@ const LoginRegisterForm = () => {
                 setError('Please select a valid image file');
                 return;
             }
-            
+
             // Validate file size (5MB limit)
             if (file.size > 5 * 1024 * 1024) {
                 setError('Image size should be less than 5MB');
                 return;
             }
 
-            setRegisterData(prev => ({
+            setRegisterData((prev) => ({
                 ...prev,
-                image: file
+                image: file,
             }));
 
             // Create preview
             const reader = new FileReader();
-            reader.onload = (e:any) => {
+            reader.onload = (e: any) => {
                 setImagePreview(e.target.result);
             };
             reader.readAsDataURL(file);
@@ -136,29 +135,33 @@ const LoginRegisterForm = () => {
     };
 
     const removeImage = () => {
-        setRegisterData(prev => ({
+        setRegisterData((prev) => ({
             ...prev,
-            image: null
+            image: null,
         }));
         setImagePreview(null);
         // Reset file input
-       const fileInput = document.getElementById('imageUpload') as HTMLInputElement | null;
-if (fileInput) {
-    fileInput.value = '';
-}
+        const fileInput = document.getElementById('imageUpload') as HTMLInputElement | null;
+        if (fileInput) {
+            fileInput.value = '';
+        }
     };
 
-    const handleRegisterSubmit = async (e:any) => {
+    const handleRegisterSubmit = async (e: any) => {
         e.preventDefault();
         setError('');
         setSuccess('');
         setIsSubmitting(true);
 
         // Enhanced Validation with Regional Support
-        
+
         // 1. Basic field validation
         if (!registerData.customerName.trim()) {
-            setError('Please enter your full name');
+            if (registerData.customerType === 'B2B') {
+                setError('Please enter your company name');
+            } else {
+                setError('Please enter your full name');
+            }
             setIsSubmitting(false);
             return;
         }
@@ -181,7 +184,6 @@ if (fileInput) {
             setIsSubmitting(false);
             return;
         }
-
 
         // 4. Phone number validation for all countries
         if (!registerData.customerPhone || !registerData.customerPhone.trim()) {
@@ -216,7 +218,6 @@ if (fileInput) {
             return;
         }
 
-
         // 7. Username validation
         if (registerData.userName.length < 3) {
             setError('Username must be at least 3 characters long');
@@ -232,16 +233,17 @@ if (fileInput) {
 
         try {
             console.log('Submitting registration with:', registerData);
-            
+
             // Create FormData for file upload
             const formData = new FormData();
+            formData.append('customerType', registerData.customerType.trim());
             formData.append('customerName', registerData.customerName.trim());
             formData.append('userName', registerData.userName.trim());
             formData.append('customerPassword', registerData.customerPassword.trim());
             formData.append('customerEmail', registerData.customerEmail.trim());
             formData.append('country', '');
             formData.append('customerPhone', registerData.customerPhone.trim());
-            
+
             // Append image if selected
             if (registerData.image) {
                 formData.append('image', registerData.image);
@@ -259,23 +261,24 @@ if (fileInput) {
                 // Reset form
                 setRegisterData({
                     customerName: '',
+                    customerType: '',
                     userName: '',
                     customerPassword: '',
                     customerEmail: '',
                     country: '',
                     customerPhone: '',
                     confirmPassword: '',
-                    image: null
+                    image: null,
                 });
                 setImagePreview(null);
                 setPhoneValidationMessage('');
-                
+
                 // Reset file input
-               const fileInput = document.getElementById('imageUpload') as HTMLInputElement | null;
-if (fileInput) {
-    fileInput.value = '';
-}
-                
+                const fileInput = document.getElementById('imageUpload') as HTMLInputElement | null;
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+
                 // Switch to login form after successful registration
                 setTimeout(() => {
                     setIsLogin(true);
@@ -292,26 +295,26 @@ if (fileInput) {
         }
     };
 
-    const handleLoginInputChange = (e:any) => {
+    const handleLoginInputChange = (e: any) => {
         const { name, value } = e.target;
-        setLoginData(prev => ({
+        setLoginData((prev) => ({
             ...prev,
-            [name]: value
+            [name]: value,
         }));
     };
 
-    const handleRegisterInputChange = (e:any) => {
+    const handleRegisterInputChange = (e: any) => {
         const { name, value } = e.target;
-        setRegisterData(prev => ({
+        setRegisterData((prev) => ({
             ...prev,
-            [name]: value
+            [name]: value,
         }));
     };
 
     const handlePhoneChange = (value: string | undefined) => {
         const phoneValue = value || '';
-        setRegisterData(prev => ({ ...prev, customerPhone: phoneValue }));
-        
+        setRegisterData((prev) => ({ ...prev, customerPhone: phoneValue }));
+
         // Real-time validation feedback
         if (phoneValue.trim() === '') {
             setPhoneValidationMessage('');
@@ -321,7 +324,6 @@ if (fileInput) {
             setPhoneValidationMessage('Please enter a complete and valid phone number');
         }
     };
-
 
     const switchForm = () => {
         setIsLogin(!isLogin);
@@ -339,12 +341,8 @@ if (fileInput) {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600">
                         <Globe className="h-8 w-8 text-white" />
                     </div>
-                    <h1 className="mb-2 text-4xl font-bold text-white">
-                        {isLogin ? 'Welcome Back' : 'Create Account'}
-                    </h1>
-                    <p className="text-lg text-gray-200">
-                        {isLogin ? 'Sign in to your account' : 'Join us today'}
-                    </p>
+                    <h1 className="mb-2 text-4xl font-bold text-white">{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
+                    <p className="text-lg text-gray-200">{isLogin ? 'Sign in to your account' : 'Join us today'}</p>
                 </div>
 
                 {/* Form Toggle Buttons */}
@@ -352,9 +350,7 @@ if (fileInput) {
                     <button
                         onClick={() => setIsLogin(true)}
                         className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                            isLogin
-                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                                : 'text-gray-300 hover:text-white'
+                            isLogin ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-gray-300 hover:text-white'
                         }`}
                     >
                         <LogIn className="inline w-4 h-4 mr-2" />
@@ -363,9 +359,7 @@ if (fileInput) {
                     <button
                         onClick={() => setIsLogin(false)}
                         className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                            !isLogin
-                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                                : 'text-gray-300 hover:text-white'
+                            !isLogin ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-gray-300 hover:text-white'
                         }`}
                     >
                         <UserPlus className="inline w-4 h-4 mr-2" />
@@ -462,6 +456,35 @@ if (fileInput) {
                 {/* Register Form */}
                 {!isLogin && (
                     <div className="space-y-4">
+                        {/* Customer Type */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-white">Customer Type *</label>
+                            <div className="flex justify-evenly items-center gap-6">
+                                <label className="flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="customerType"
+                                        value="B2B"
+                                        checked={registerData.customerType === 'B2B'}
+                                        onChange={handleRegisterInputChange}
+                                        className="form-radio accent-blue-500"
+                                        required
+                                    />
+                                    <span className="ml-2 text-white">B2B</span>
+                                </label>
+                                <label className="flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="customerType"
+                                        value="B2C"
+                                        checked={registerData.customerType === 'B2C'}
+                                        onChange={handleRegisterInputChange}
+                                        className="form-radio accent-blue-400"
+                                    />
+                                    <span className="ml-2 text-white">B2C</span>
+                                </label>
+                            </div>
+                        </div>
                         {/* Image Upload */}
                         <div>
                             <label htmlFor="imageUpload" className="mb-2 block text-sm font-medium text-white">
@@ -470,7 +493,10 @@ if (fileInput) {
                             <div className="relative">
                                 {!imagePreview ? (
                                     <div className="flex items-center justify-center w-full">
-                                        <label htmlFor="imageUpload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-all duration-200">
+                                        <label
+                                            htmlFor="imageUpload"
+                                            className="flex flex-col items-center justify-center w-full h-32 border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-all duration-200"
+                                        >
                                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                                 <Upload className="w-8 h-8 mb-3 text-gray-400" />
                                                 <p className="mb-2 text-sm text-gray-300">
@@ -478,22 +504,12 @@ if (fileInput) {
                                                 </p>
                                                 <p className="text-xs text-gray-400">PNG, JPG or JPEG (MAX. 5MB)</p>
                                             </div>
-                                            <input 
-                                                id="imageUpload" 
-                                                type="file" 
-                                                className="hidden" 
-                                                accept="image/*"
-                                                onChange={handleImageUpload}
-                                            />
+                                            <input id="imageUpload" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                                         </label>
                                     </div>
                                 ) : (
                                     <div className="relative">
-                                        <img 
-                                            src={imagePreview} 
-                                            alt="Preview" 
-                                            className="w-full h-32 object-cover rounded-lg border border-white/20"
-                                        />
+                                        <img src={imagePreview} alt="Preview" className="w-full h-32 object-cover rounded-lg border border-white/20" />
                                         <button
                                             type="button"
                                             onClick={removeImage}
@@ -509,14 +525,14 @@ if (fileInput) {
                         {/* Customer Name */}
                         <div>
                             <label htmlFor="customerName" className="mb-2 block text-sm font-medium text-white">
-                                Full Name *
+                                {registerData.customerType === 'B2B' ? 'Company Name *' : 'Full Name *'}
                             </label>
                             <div className="relative">
                                 <input
                                     id="customerName"
                                     name="customerName"
                                     type="text"
-                                    placeholder="Enter your full name"
+                                    placeholder={registerData.customerType === 'B2B' ? 'Enter your company name' : 'Enter your full name'}
                                     className="w-full rounded-lg bg-white/10 border border-white/20 px-4 py-3 pl-12 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all duration-200"
                                     value={registerData.customerName}
                                     onChange={handleRegisterInputChange}
@@ -588,15 +604,7 @@ if (fileInput) {
                                 />
                             </div>
                             {/* Phone validation message */}
-                            {phoneValidationMessage && (
-                                <p className={`text-xs mt-1 ${
-                                    phoneValidationMessage.includes('✓') 
-                                        ? 'text-green-400' 
-                                        : 'text-yellow-400'
-                                }`}>
-                                    {phoneValidationMessage}
-                                </p>
-                            )}
+                            {phoneValidationMessage && <p className={`text-xs mt-1 ${phoneValidationMessage.includes('✓') ? 'text-green-400' : 'text-yellow-400'}`}>{phoneValidationMessage}</p>}
                         </div>
 
                         {/* Password */}
@@ -670,13 +678,8 @@ if (fileInput) {
 
                 {/* Switch Form Link */}
                 <div className="text-center mt-6">
-                    <span className="text-gray-300">
-                        {isLogin ? "Don't have an account? " : "Already have an account? "}
-                    </span>
-                    <button
-                        onClick={switchForm}
-                        className="text-blue-400 hover:text-blue-300 underline font-medium transition-colors duration-200"
-                    >
+                    <span className="text-gray-300">{isLogin ? "Don't have an account? " : 'Already have an account? '}</span>
+                    <button onClick={switchForm} className="text-blue-400 hover:text-blue-300 underline font-medium transition-colors duration-200">
                         {isLogin ? 'Sign up here' : 'Sign in here'}
                     </button>
                 </div>
